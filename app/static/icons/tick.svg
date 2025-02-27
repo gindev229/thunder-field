@@ -1,0 +1,21 @@
+<svg width="22" height="25" viewBox="0 0 22 25" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g clip-path="url(#clip0_119_2)">
+<mask id="mask0_119_2" style="mask-type:luminance" maskUnits="userSpaceOnUse" x="0" y="0" width="22" height="25">
+<path d="M22 0H0V25H22V0Z" fill="white"/>
+</mask>
+<g mask="url(#mask0_119_2)">
+<mask id="mask1_119_2" style="mask-type:luminance" maskUnits="userSpaceOnUse" x="0" y="0" width="22" height="25">
+<path d="M21.59 0H0V25H21.59V0Z" fill="white"/>
+</mask>
+<g mask="url(#mask1_119_2)">
+<path d="M10.795 23.59C16.7569 23.59 21.59 18.7569 21.59 12.795C21.59 6.83309 16.7569 2 10.795 2C4.83309 2 0 6.83309 0 12.795C0 18.7569 4.83309 23.59 10.795 23.59Z" fill="#0ABFFF"/>
+<path d="M17.6641 9.96975C18.112 9.51915 18.112 8.78857 17.6641 8.33796C17.216 7.88735 16.4898 7.88735 16.0418 8.33796L9.20582 15.2145L6.95814 12.9533C6.51019 12.5027 5.78391 12.5027 5.33596 12.9533C4.88801 13.404 4.88801 14.1346 5.33596 14.5851L8.39478 17.6621C8.84276 18.1126 9.56902 18.1126 10.0169 17.6621L17.6641 9.96975Z" fill="white"/>
+</g>
+</g>
+</g>
+<defs>
+<clipPath id="clip0_119_2">
+<rect width="22" height="25" fill="white"/>
+</clipPath>
+</defs>
+</svg>
