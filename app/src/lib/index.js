@@ -10,6 +10,9 @@ export function emitRightText(value, numberChar) {
 };
 export function emitBetweenText(value, numberChar) {
     // Convert value to string if it's a number
+    if(!value){
+      return
+    }
     value = value.toString();
 
     if (value.length > numberChar) {
@@ -68,3 +71,20 @@ export function timeAgo(timeCreated) {
       return `${years} years ago`;
     }
   }
+
+
+  export function formatTimeLeft(milliseconds) {
+    const totalSeconds = Math.floor(milliseconds / 1000);
+    const totalMinutes = Math.floor(totalSeconds / 60);
+    const totalHours = Math.floor(totalMinutes / 60);
+    const totalDays = Math.floor(totalHours / 24);
+    const totalWeeks = Math.floor(totalDays / 7);
+
+    if (totalDays >= 7) {
+    return `${totalWeeks} weeks ${totalDays % 7} days`;
+    } else if (totalDays < 7 && totalDays >= 1) {
+    return `${totalDays} days ${totalHours % 24} hours`;
+    } else if (totalDays < 1) {
+    return `${totalHours} hours ${totalMinutes % 60} minutes`;
+    }
+}
