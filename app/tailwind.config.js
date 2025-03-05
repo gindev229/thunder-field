@@ -16,7 +16,6 @@ export default {
         lightDark: '#1F202E',
         lightBg: '#F4F7F9',
         sea: '#58F6F7',
-        sea: '#58F6F7',
         darkGreen: '#2B7E21',
         yellowOverlay: '#F4F1E7',
         lightYellow:'#F9F0B1',
@@ -33,16 +32,18 @@ export default {
         button:"#0ABFFF",
         buttonHover:"#0A9ACD",
         darkBlue:'#0E242C',
-        blue:"#0ABFFF"
+        blue:"#0ABFFF",
+        darkCard:'#252525',
+        darkCardHover:'#2B2B2B',
+        arenaLight:'#9EB6D6',
+        arenaMedium:'#242527',
+        arenaDark:'#191B1F',
+        arenaBg:'#0B0A26'
       },
       backgroundImage: {
         'orange': 'linear-gradient(to bottom, #00843F, #CAA201)',
-        'greenYellow': 'linear-gradient(to bottom, #FFFBE6, #C9DED3)',
-        'yellowGreenHigh': 'linear-gradient(to right, #F2EDC3, #8EDD85)',
-        'yellowGreenBold': 'linear-gradient(to right, #2F8D2D, #889916)',
+        'linear': 'linear-gradient(to bottom,rgb(230, 240, 255),rgb(204, 201, 222))',
         'linearRed': 'linear-gradient(to right, #F61616, #900D0D)',
-        'linearGreen': 'linear-gradient(to right, #C8FFA7, #79E139)',
-        'linearYellow': 'linear-gradient(to bottom, #FFFBAB, #BDB623)'
 
       }
     },
