@@ -82,7 +82,7 @@
 
     @keyframes pulseGlow {
         0%, 100% {
-            box-shadow: #6DC82A 0 0 0.1vw 0.1vw;
+            box-shadow: #2a86c8 0 0 0.1vw 0.1vw;
         }
         50% {
             box-shadow: #6DC82A 0 0 1vw 0.7vw;
@@ -91,21 +91,21 @@
 
     @keyframes colorChange {
         0%, 100% {
-            background-image: linear-gradient(to bottom, #F2EDC3, #8EDD85);
+            background-image: linear-gradient(to bottom, #000000, #020B49);
         }
 
         25%, 70% {
-            background-image: linear-gradient(to bottom, #F2EBAF, #78DE6B);
+            background-image: linear-gradient(to bottom, #000000, #010D58);
         }
 
         50% {
-            background-image: linear-gradient(to bottom, #F3EAA1, #6DDF60);
+            background-image: linear-gradient(to bottom, #000000, #010E67);
         }
     }
 
 
     .loading {
-        animation: colorChange 1s infinite ease-in-out;
+        animation: colorChange 0.75s infinite ease-in-out;
     }
 
     .smooth-scroll {
@@ -193,12 +193,7 @@
         color: transparent;
     }
 
-    .text-linearYellow{
-        background-image: linear-gradient(to bottom, #FFFBAB, #BDB623);
-        -webkit-background-clip: text;
-        background-clip: text;
-        color: transparent;
-    }
+
 
     @keyframes float {
         0% {
@@ -350,24 +345,24 @@
     }
 
     @keyframes border-glow-run {
-    0% {
-        border-color: rgb(255, 251, 0);
-        box-shadow: 0 0 1vw rgb(255, 251, 0)
-                    0 0 1.4vw rgba(182, 180, 46, 0.5),
-                    0 0 1.6vw rgb(255, 251, 0, 0.3);
-    }
-    50% {
-        border-color: rgb(34, 255, 0);
-        box-shadow: 0 0 1vw rgb(0, 255, 38),
-                    0 0 1.4vw rgba(51, 255, 0, 0.5),
-                    0 0 1.6vw rgba(51, 255, 0, 0.3);
-    }
-    100% {
-        border-color: rgb(255, 251, 0);
-        box-shadow: 0 0 1vw rgb(255, 251, 0)
-                    0 0 1.4vw rgb(255, 251, 0, 0.5),
-                    0 0 1.6vw  rgb(255, 251, 0, 0.3);
-    }
+        0% {
+            border-color: rgb(0, 255, 234);
+            box-shadow: 0 0 1vw rgb(0, 221, 255)
+                        0 0 1.4vw rgba(46, 159, 182, 0.5),
+                        0 0 1.6vw rgba(0, 217, 255, 0.3);
+        }
+        50% {
+            border-color: rgb(81, 0, 255);
+            box-shadow: 0 0 1vw rgb(51, 0, 255),
+                        0 0 1.4vw rgba(0, 8, 255, 0.5),
+                        0 0 1.6vw rgba(0, 81, 255, 0.3);
+        }
+        100% {
+            border-color: rgb(0, 229, 255);
+            box-shadow: 0 0 1vw rgb(0, 247, 255)
+                        0 0 1.4vw rgba(0, 255, 213, 0.5),
+                        0 0 1.6vw  rgba(0, 255, 208, 0.3);
+        }
     }
 
     .glow-border-run {
