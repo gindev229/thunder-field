@@ -136,7 +136,6 @@
 
             if (response1.ok) {
                 const responseBody = await response1.json();
-                console.log(responseBody, "responseBody")
                 try {
                     for (const nft of responseBody.payload.nftInfos) {
                         description[nft.collection] = nft.metadata.description;
@@ -160,7 +159,6 @@
 
             if (response2.ok) {
                 const responseBody = await response2.json();
-                console.log("responseBody123", responseBody)
                 topCollections = responseBody.payload.collectionInfos.map((collection => {
                     return {
                         address: collection.address,
@@ -175,7 +173,6 @@
                     }
                 }));
                 topCollections = [...topCollections];
-                console.log(topCollections,"topCollections")
             }
         }
 
@@ -778,13 +775,24 @@
                         {/if}
                 </div>
                 <!--See all button-->
-                <button class="absolute bottom-0 right-0 mb-[-20px] text-base p-2 bg-button hover:bg-buttonHover shadow-xl text-white font-semibold rounded-md w-[200px]" on:click={()=>{goto(`./collections`)}} >
+                <button class="absolute bottom-0 right-0 mb-[-20px] text-base p-2 bg-button hover:bg-buttonHover shadow-xl text-white font-semibold rounded-md lg:w-[200px] md:w-[150px] sm:w-[100px] w-[80px]" on:click={()=>{goto(`./collections`)}} >
                     See all
                 </button>
             </div>
             <h1 class="text-white  text-2xl font-semibold sm:mt-[50px] mt-[20px] mb-[10px]">
                 NFT Arena
             </h1>
+            <div class="flex flex-wrap w-full justify-between items-center gap-[10px] z-[20] text-xs self-center bottom-[4vw] text-white mb-[8px]">
+                <div class="px-2 border border-button rounded-md">
+                    Battle with any ERC-721 NFT, no gaming NFT needed
+                </div>
+                <div class="px-2 border border-button rounded-md">
+                    Auto-generated skills based on the NFT's trait name
+                </div>
+                <div class="px-2 border border-button rounded-md">
+                    Solo others, winner takes staked $ETN from loser
+                </div>
+            </div>
 
             <button class="relative justify-center flex flex-col flex-grow bg-black px-2 py-2 shadow-md overflow-hidden rounded-xl border-[10px] border-buttonHover" on:click={()=>{window.open("/nftarena")}}>
                 <div class="relative w-full overflow-hidden md:h-[20vw] sm:h-[30vw]">
@@ -793,7 +801,7 @@
                         <img class="absolute" alt="background" src="/game/load/bgLoad.webp"/>
                         
                         <!--Catto-->
-                        <img alt="catto nft" class="absolute left-[5vw] bottom-[21vw] z-10 h-[15vw] w-auto object-contain floating" src="/game/load/catto.png"/>
+                        <img alt="catto nft" class="absolute left-[5vw] bottom-[21vw] z-10 h-[15vw] w-auto object-contain floating" src="/game/load/coolCat.png"/>
                         
                         <!--Ape-->
                         <div class="flex absolute left-[17vw] bottom-[13vw] w-[50vw]  h-[15vw] floating3">
@@ -822,7 +830,7 @@
                         <!--Wk-->
                         <div class="flex absolute right-[17vw] bottom-[13vw]  h-[16vw] w-[11vw]">
                             <div class="flex relative w-full h-full">
-                                <img alt="random nft" class="absolute z-10 h-[16vw] w-auto object-contain floating4" src="/game/load/wukong.png"/>                 
+                                <img alt="random nft" class="absolute z-10 h-[16vw] w-auto object-contain floating4" src="/game/load/cryptoPunk.png"/>                 
                                 <img alt="spell" class="absolute right-[2vw] top-[3vw] z-20 h-auto w-[10vw] object-contain floating2" src="/game/load/wkSpel.png"/>                                                         
                             </div>
                         </div>
@@ -839,11 +847,6 @@
                 <div class="absolute self-center text-white hover:text-blue md:w-[15vw] md:h-[15vw] h-[20vw] w-[20vw] gap-[0.5vw] flex flex-col justify-center items-center bg-black z-20 rounded-full bg-opacity-90 glow-border-run">
                     <span class="md:text-[1.8vw] text-[2vw] mt-[1vw] font-geo font-semibold">
                         PLAY NOW
-                    </span>
-                </div>
-                <div class="absolute flex w-full justify-center z-20 md:bottom-[0.8vw] bottom-[8vw]">
-                    <span class=" z-[20] text-[1.6vw] font-bold text-linearYellow">
-                        Battle with any ERC721 NFT in a PvP Game
                     </span>
                 </div>
             </button>

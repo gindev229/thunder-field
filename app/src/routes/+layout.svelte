@@ -1,7 +1,7 @@
 <script>
     import "../app.css";
-    import Analytics from '$lib/Analytics.svelte'
 </script>
 
-    <Analytics />
-<slot />
+<div class="font-Oxanium">
+    <slot />
+</div>
