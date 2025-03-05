@@ -1,11 +1,10 @@
 
 <script>
-     import Seo from '$lib/Seo.svelte';
     import { fade,slide } from 'svelte/transition'; 
-    import {roundNum} from '$lib/index.js';
     import { goto } from '$app/navigation';
-    import { page } from '$app/stores';
     import { emitBetweenText } from '$lib/index.js';
+    import { erc721ABI, erc721Bytecode, marketplaceAddress, marketplaceABI } from "$lib/contract.config.js";
+    import Loading from "$lib/Loading.svelte";
     import { onMount } from 'svelte';
     import { ethers } from "ethers";
     import config from "$lib/config.js";
@@ -13,7 +12,9 @@
     let connectToMetamask;
     let isLogin = false;
     let loading = true;
-    
+    let popupLoading = false;
+    let isImportSuccess = false;
+
     //User address
     let userAddress;
     let address;
@@ -21,19 +22,16 @@
 
     //Load list NFT
     let nftList = [];
-    let currentItem = 0;
-    let done = false;
-    let items = [];
+
 
 
     //Atributes of NFTs
     let attributes = [];
     let tokenURI = "";
     let metadata = {};
-    let owner, price, lister, isSold, collectionName 
+    let owner, price, lister, isSold, collectionName ;
+    let resultSkills = [];
     //
-    let showSelectedAtributes = [{},{}]
-
 
 
     // Component state
@@ -69,77 +67,29 @@
             console.log(getResult, "getResult")
             //New
             tokenURI = getResult.tokenURI,
+            collectionName = getResult.collectionName;
             metadata = getResult.metadata, 
             owner = getResult.owner,
-            console.log(owner, "owner")
-            price = getResult.price;
             lister = getResult.lister;
-            isSold = getResult.isSold;
-            collectionName = getResult.collectionName;
-
-            // Get a list of attributes
-            if (Array.isArray(metadata.attributes)) {
-                for (const attribute of metadata.attributes) {
-                    attributes.push({ attribute: attribute["trait_type"], value: attribute["value"] });
-                }
-            }
-
-            attributes = [...attributes];
-            console.log(attributes, "attributessssssssssssssssssssssssssssssssss")
+            //Reactive
+            owner = owner;
+            lister = lister;
         } else {
-            loading = false;
 
             const responseBody = await response.json();
 
             if (responseBody.error && responseBody.error.message) {
+                popupLoading = false;
+                generalError = true;
+                generalErrorValue = responseBody.error.message;
                 throw new Error(responseBody.error.message);
             }
         }
-
-        loading = false;
 	}
 
-    async function loadNFTs() {
-            loading = true;
-            
-            const nfts = [];
-
-            for (let index = currentItem; index < currentItem + 100; index++) {
-                const id = nftList[index];
-
-                nfts.push(id);
-            }
-
-            try {
-                const curatedNFTs = nfts.filter(id => typeof id !== "undefined" && id !== null);
-
-                if (curatedNFTs.length !== nfts.length) { done = true; }
-
-                const nftInfos = (await getNFTsInfo(curatedNFTs, [ "metadata", "offers", "owner" ])).nftInfos;
-
-                const newNfts = nftInfos.map(nft => ({ ...nft, id: nft.id }));
-
-                items = [ ...items, ...newNfts ];
-            } catch (e) {
-                console.log(e);
-
-                done = true;
-                loading = false;
-            }
-            loading = false;
-            currentItem += 100;
-    }
-
     async function generateNFTSkill(collectionAddress, attributes) {
-        try {
-            console.log("inputyyyyyyyyyyyyyyy", attributes)
-            
-            //Conver to object
-            const attributesObject = {};
-            attributes.forEach((attr, index) => {
-                attributesObject[index] = attr;
-            });
-            console.log(attributesObject, "attributesObject")
+        try {    
+            console.log(attributes, "attributes")
             //
             const response = await fetch(config.rpcUrl, {
                 method: "POST",
@@ -147,7 +97,7 @@
                     method: "generateNFTSkill",
                     params: {
                         collectionAddress,
-                        attributes:attributesObject
+                        attributes:attributes
                     }
                 }),
                 headers: {
@@ -158,47 +108,28 @@
 
             if (response.ok) {
                 const responseBody = await response.json();
-                console.log("yeahhhhhhhhhhhhhhhhhh", responseBody.payload)
-
+                console.log(responseBody.payload, "generateNFT")
+                resultSkills = responseBody.payload.data[1];
                 return responseBody.payload;
             } else {
                 const responseBody = await response.json();
                 if (responseBody.error && responseBody.error.message) {
+                    popupLoading = false;
+                    generalError = true;
+                    generalErrorValue = responseBody.error.message;
                     throw new Error(responseBody.error.message);
                 }
+                popupLoading = false;
+                generalError = true;
+                generalErrorValue = "Unknown error occurred";
                 throw new Error("Unknown error occurred");
+
             }
         } catch (error) {
-            console.error("Error generating NFT skills:", error);
+            popupLoading = false;
+            generalError = true;
+            generalErrorValue = error;
             throw error;
-        }
-    }
-
-    async function getNFTsInfo(nfts, exclude) {
-        const response = await fetch(config.rpcUrl, {
-            method: "POST",
-            body: JSON.stringify({
-                method: "getNFTsInfo",
-                params: {
-                    nfts,
-                    exclude
-                }
-            }),
-            headers: {
-                "Content-Type": "application/json"
-            }
-        });
-
-        if (response.ok) {
-            const responseBody = await response.json();
-
-            return responseBody.payload;
-        } else {
-            const responseBody = await response.json();
-
-            if (responseBody.error && responseBody.error.message) {
-                throw new Error(responseBody.error.message);
-            }
         }
     }
 
@@ -232,7 +163,6 @@
     }
 
     async function addNFTToLocalList(collectionAddress, id) {
-            console.log("damn")
             const provider = new ethers.providers.Web3Provider(window.ethereum);
             const signer = provider.getSigner();
             const userAddress = await signer.getAddress();
@@ -251,8 +181,6 @@
 
             //////////// Ownership check
             const { owner, lister } = await getNFTOwner(collectionAddress, id);
-
-            console.log(owner, userAddress,lister,"12321" );
             /*if (owner !== userAddress && lister !== userAddress) {
                 return;
             }*/
@@ -267,10 +195,84 @@
     }
 
     async function importAndGenerateNFT(collectionAddress, id){
+        //Reset
+        subMitNftContract= "";
+        subMitNftId= "";
+        subMitNftContract = subMitNftContract;
+        subMitNftId = subMitNftId;
+        attributes = [];
+        attributes = attributes;
+        resultSkills = [];
+        resultSkills = resultSkills;
+        isOwnerError = false;
+        isImportSuccess = false;
+        //
+        popupLoading = true;
+        await getNFTInfo(collectionAddress, id);
+        //Check if items existed
+        if (!collectionName) {
+            popupLoading = false;
+            generalError = true;
+            generalErrorValue = "Collection does not exist";
+            return; 
+        }
+        if (!tokenURI) {
+            popupLoading = false;
+            generalError = true;
+            generalErrorValue = "This NFT is not existed, you can check on explorer";
+            return; 
+        }
+        
+        subMitNftContract = inputNftContract;
+        subMitNftContract = subMitNftContract; //For reactive
+        subMitNftId= inputId;
+        subMitNftId= subMitNftId;  //For reactive
+        //Check if NFT has traits
+        if (!metadata?.attributes || metadata?.attributes.length === 0) {
+            popupLoading = false;
+            generalError = true;
+            generalErrorValue = "This NFT has no traits, you may want to use another NFTs";
+            return; 
+        }
 
+        if (Array.isArray(metadata.attributes)) {
+                for (const attribute of metadata.attributes) {
+                    attributes.push({ attribute: attribute["trait_type"], value: attribute["value"] });
+                }
+            }
+        attributes = attributes;
+        await generateNFTSkill(subMitNftContract, attributes);
+        if (!resultSkills || resultSkills?.length === 0) {
+            popupLoading = false;
+            generalError = true;
+            generalErrorValue = "This NFT has no traits, you may want to use another NFTs";
+            return; 
+        }
+
+        if (owner !== userAddress && lister !== userAddress) {
+            popupLoading = false;
+            generalError = true;
+            isOwnerError = true;
+            generalErrorValue = "You are not owner of this NFT";
+            return; 
+        }
+
+        addNFTToLocalList(subMitNftContract, subMitNftId);
+        isImportSuccess = true;
+        popupLoading = false;
+    
     }
 
+    //Display error
+    let generalError = false;
+    let generalErrorValue = "Error";
+    let isOwnerError = false;
 
+    setInterval(()=>{
+        if(generalError === true){
+            setTimeout(()=>{generalError = false; generalErrorValue = "Error" }, 2000)
+        }
+    }, 100);
 
     onMount(async () => {
         // Connect to metamask
@@ -426,7 +428,6 @@
             } catch (e) {}
 
             // Load the first batch of nfts
-            loadNFTs(nftList);
 
         })();
 
@@ -753,11 +754,10 @@
     }
 </style>
 
-<div class="relative hidden md:flex  flex-col w-full h-screen bg-dark text-white ">
+<div class="relative  flex flex-col w-full h-screen bg-dark text-white ">
     <!--Game Screen-->
     <div class="flex flex-col relative w-[90vw] h-[45vw] maw-w-[1920px] max-h-[45vw] m-auto bg-cover rounded-md font-geo px-[2vw] py-[1vw] text-[1vw] overflow-hidden">
         <div class="flex">
-            <!-- Left Sidebar - Brown section (30vw) -->
             <div class="w-[30vw] h-full bg-[#5B4D35] p-[2vw] flex flex-col">
                 <!-- Back button -->
                 <div class="mb-[3vw]">
@@ -771,48 +771,73 @@
                 
                 <!-- Import NFTs section -->
                 <h1 class="text-[1.5vw] font-bold text-white mb-[1vw]">IMPORT YOUR EXISTING NFTS</h1>
-                <a class="mb-[2vw] text-darkGray underline hover:text-buttonHover">
+                <button class="flex justify-start items-start mb-[2vw] text-darkGray underline hover:text-buttonHover" on:click={()=>{window.open(`${config.blockExplorerUrls}/address/${address}`, "_blank")}}>
                     View your ERC721 NFTs you own on block explorer
-                </a>
+                </button>
                 <!-- Form fields -->
                 <div class="flex flex-col gap-[1vw]">
-                <input 
-                    type="text" 
-                    bind:value={inputNftContract}
-                    placeholder="Enter NFT Contract" 
-                    class=" bg-black border border-white/40 text-white p-[1vw] text-[1.1vw] w-full"
-                />
-                
-                <input 
-                    type="text" 
-                    bind:value={inputId}
-                    placeholder="Enter your NFT ID" 
-                    class="bg-black border border-white/40 text-white p-[1vw] text-[1.1vw] w-full"
-                />
-                
-                <button 
-                    on:click={getNFTInfo(inputNftContract,inputId )}
-                    class="bg-button hover:bg-buttonHover  text-white py-[1vw] text-[1.3vw] font-semibold mt-[1vw]"
-                >
-                    IMPORT NFTS
-                </button>
+                    <input 
+                        type="text" 
+                        bind:value={inputNftContract}
+                        placeholder="Enter NFT Contract" 
+                        class=" bg-black border border-white/40 text-white p-[1vw] text-[1.1vw] w-full"
+                    />
+                    
+                    <input 
+                        type="text" 
+                        bind:value={inputId}
+                        placeholder="Enter your NFT ID" 
+                        class="bg-black border border-white/40 text-white p-[1vw] text-[1.1vw] w-full"
+                    />
+                    
+                    <button 
+                        on:click={importAndGenerateNFT(inputNftContract,inputId )}
+                        class="bg-button hover:bg-buttonHover  text-white py-[1vw] text-[1.3vw] font-semibold mt-[1vw]"
+                    >
+                        IMPORT NFTS
+                    </button>
+                    {#if isOwnerError}
+                        <div class="flex flex-col text-red-500">
+                            <span class="">
+                                You are not owner of this NFT
+                            </span>
+                            <div class="flex gap-[0.2vw]">
+                                <span>
+                                    Owner of this NFT is
+                                </span>
+                                <button class="flex underline" on:click={()=>{window.open(`${config.blockExplorerUrls}/address/${owner}`, "_blank")}}>
+                                    {emitBetweenText(owner, 10)}
+                                </button>
+                            </div>
+                        </div>
+                    {/if}
+                    {#if isImportSuccess}
+                        <div class="flex flex-col text-button">
+                            <span class="">
+                               Import Succesfull
+                            </span>
+                            <span>
+                                You can now use this NFT to battle 
+                            </span>
+                        </div>
+                    {/if}
+                    
                 </div>
             </div>
             
-            <!-- Right side -->
             <div class="w-[70vw] bg-black flex flex-col justify-center items-center justify-center gap-[10px] p-[2vw]">
-                {#if metadata.length >0}
+                {#if collectionName}
                     <div class="flex flex-col rounded-md w-[35vw]" >
                         <div class="flex flex-col p-[1vw] bg-[#806E2F] rounded-md" in:slide={{ duration: 300 }}>
                             <div class="flex gap-[1vw]">
                                 <!--Dragon Image info-->
-                                <div class="w-[7vw] h-[7vw] bg-black">
-                                    <img class="bg-black w-[7vw] h-[7vw]" src={`${config.rpcUrl}/cdn/nft/${inputNftContract}/${inputId}/200/200`}/>
+                                <div class="w-[7vw] h-[7vw] loading">
+                                    <img class="bg-black w-[7vw] h-[7vw]" src={`${config.rpcUrl}/cdn/nft/${subMitNftContract}/${subMitNftId}/200/200`}/>
                                 </div>
                                 <!---->
                                 <div class="flex flex-col justify-center gap-[10px]">
                                     <span class="text-[#D6C99E]">
-                                        From <span class="text-linearGreen font-thin"> Name example</span>
+                                        From <span class="text-linearGreen font-thin"> {collectionName}</span>
                                     </span>
                                     <span class=" font-semibold">
                                         #{inputId}
@@ -823,27 +848,47 @@
                                 <span class="text-white text-[1.2vw]">
                                     Generated Skills Based on NFT Trait Names:
                                 </span>
-                                
-                                <!-- skill-->
-                                {#each attributes as attribute}
-                                    <div class="flex flex-col">
-                                        <span>
-                                            <span class="text-linearGreen">
-                                                {attribute.attribute} : {attribute.value}
+                                {#if attributes?.length >0 && resultSkills?.length == 0}
+                                    <!-- skill-->
+                                    {#each attributes as attribute}
+                                        <div class="flex flex-col">
+                                            <span>
+                                                <span class="text-linearGreen">
+                                                    {attribute.attribute}.{attribute.value}
+                                                </span>
                                             </span>
-                                        </span>
-                                        <span class="text-[0.8vw] font-medium">
-                                            Encounter Rate:
-                                            <span class="text-white">
-                                                {(100/(attributes.length)).toFixed(2)}%
+                                            <span class="text-[0.8vw] font-medium">
+                                                Encounter Rate:
+                                                <span class="text-white">
+                                                    {(100/(attributes.length)).toFixed(2)}%
+                                                </span>
                                             </span>
-                                        </span>
-                                        <span class="text-[0.8vw] text-white font-medium ml-[1vw]">
-                                            Loading skill
-                                        </span>
-                                    </div>
-                                {/each}
-            
+                                            <span class="text-[0.8vw] text-white font-medium ml-[1vw]">
+                                                Loading skill
+                                            </span>
+                                        </div>
+                                    {/each}
+                                {:else if attributes?.length >0 && resultSkills?.length >0}
+                                    <!-- skill-->
+                                    {#each resultSkills as resultSkill}
+                                        <div class="flex flex-col">
+                                            <span>
+                                                <span class="text-linearGreen">
+                                                    {resultSkill.attribute}
+                                                </span>
+                                            </span>
+                                            <span class="text-[0.8vw] font-medium">
+                                                Encounter Rate:
+                                                <span class="text-white">
+                                                    {(100/(resultSkills.length)).toFixed(2)}%
+                                                </span>
+                                            </span>
+                                            <span class="text-[0.8vw] text-white font-medium ml-[1vw]">
+                                                {resultSkill.desc}
+                                            </span>
+                                        </div>
+                                    {/each}
+                                {/if}
                             </div>
                         </div>
                     </div>
@@ -857,7 +902,17 @@
                 <span class=" text-[1vw]">Skills of your NFT will be automatically AI-generated based on your NFT trait name</span>
                 
             </div>
+        </div>
+        {#if generalError}
+            <div class="absolute text-[1.5vw] bottom-0 right-[20vw] mb-[3vw] bg-red-500 px-[1vw] py-[0.5vw] rounded-md z-50" in:slide={{ duration: 200 }} out:slide={{ duration: 200 }}>
+                {generalErrorValue}
             </div>
+        {/if}
+        {#if popupLoading}
+            <div class="z-50">
+                <Loading/>
+            </div>
+        {/if}
     </div>
 </div>
 
