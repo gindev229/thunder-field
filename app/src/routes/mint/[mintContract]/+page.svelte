@@ -890,7 +890,7 @@
                                                 {/if}
                                             </div>
                                             {#if !address}
-                                                <button on:click={() => connectToMetamask()} class="text-lg border py-1 px-6 rounded rounded-lg mt-4 text-white font-semibold bg-orange self-hover">
+                                                <button on:click={() => connectToMetamask()} class="text-lg border py-1 px-6 rounded rounded-lg mt-4 text-white font-semibold bg-linearBlue self-hover">
                                                     Connect Wallet
                                                 </button>
                                             {/if}
@@ -1030,7 +1030,7 @@
                                             {/if}
                                             </div>
                                             {#if !address}
-                                                <button on:click={() => connectToMetamask()} class="text-lg border py-1 px-6 rounded rounded-lg mt-4 text-white font-semibold bg-orange self-hover">
+                                                <button on:click={() => connectToMetamask()} class="text-lg border py-1 px-6 rounded rounded-lg mt-4 text-white font-semibold bg-linearBlue self-hover">
                                                     Connect Wallet
                                                 </button>
                                             {/if}
@@ -1145,7 +1145,7 @@
 
                                 </div>
                                 {#if !address}
-                                    <button on:click={() => connectToMetamask()} class="text-lg border py-1 px-6 rounded rounded-lg mt-4 text-white font-semibold bg-orange self-hover">
+                                    <button on:click={() => connectToMetamask()} class="text-lg border py-1 px-6 rounded rounded-lg mt-4 text-white font-semibold bg-linearBlue self-hover">
                                         Connect Wallet
                                     </button>
                                 {/if}

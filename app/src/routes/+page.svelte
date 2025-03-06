@@ -855,14 +855,7 @@
             <h1 class="text-white text-2xl font-semibold mt-[60px] gap-[6px]">Launchpad</h1>
             <!--Mint feature event-->
             <div class="relative flex justify-between mb-[20px] mt-2">
-                <!--<div class="absolute flex w-full justify-between items-center self-center z-10">
-                    <button class="sm:ml-[-15px]" on:click={scrollLeft} >
-                        <img class="h-[40px] inline-block" src="/icons/leftButton.svg" alt="left button icon"/>
-                    </button>
-                    <button class="sm:mr-[-15px]" on:click={scrollRight}>
-                        <img class="h-[40px] inline-block" src="/icons/rightButton.svg" alt="right button icon"/>
-                    </button>
-                </div>-->
+
                 <!--All cards containers-->
                 <div bind:this={scrollContainer} class="flex xl:gap-[33px] lg:gap-10 gap-4 overflow-x-scroll custom-scrollbar">
                     {#if mintCollections.length === 0}
@@ -870,7 +863,7 @@
                             {#each loadingMintCollections as item}    
                                 <!--Cards-->
                                 <button  
-                                class="relative group parent flex flex-col gap-1 rounded-xl cursor-pointer relative bg-white shadow-lg  min-h-[170px] max-h-[170px] px-2 py-2 hover:border-greenHover hover:border">
+                                class="relative group parent flex flex-col gap-1 rounded-xl cursor-pointer relative bg-arenaMedium shadow-lg  min-h-[170px] max-h-[170px] px-2 py-2 hover:border-greenHover hover:border">
                                     <!--Card img-->
                                     <div class="flex items-center min-w-[322px] max-w-[322px] min-h-[95px] max-h-[95px] bg-black rounded-t-xl overflow-hidden">
                                         <div class="loading shrink-on-hover object-cover rounded-t-xl min-h-[95px] min-w-[322px] max-w-[322px]"></div>
@@ -900,7 +893,7 @@
                         {#each mintCollections as item}    
                             <!--Cards-->
                             <button on:click={()=>{goto(`./mint/${item.address}`)}} 
-                            class="relative group parent flex flex-col gap-1 rounded-xl cursor-pointer relative bg-white shadow-xl  min-h-[170px] max-h-[170px] px-2 py-2 hover:border-blue hover:border-2">
+                            class="relative group parent flex flex-col gap-1 rounded-xl cursor-pointer relative bg-arenaMedium shadow-xl  min-h-[170px] max-h-[170px] px-2 py-2 hover:border-blue hover:border-2">
                                 <!--Card img-->
                                 <div class="flex items-center min-w-[322px] max-w-[322px] min-h-[95px] max-h-[95px] bg-black rounded-t-xl overflow-hidden">
                                     <img src={`${config.rpcUrl}/banner/${item.address}`}
@@ -909,7 +902,7 @@
                                 <!--Card Info-->
                                 <div class="flex flex-col gap-[5px] w-full">
                                     <div class="flex flex-wrap w-full justify-between mt-[10px]">
-                                        <div class="flex items-center font-bold text-darkBlue gap-1 text-base">
+                                        <div class="flex items-center font-bold text-button gap-1 text-base">
                                             <span>{item.name}</span>
                                             <img class="h-[15px] inline-block" src="/icons/verified.svg" alt="verified icon"/>
                                         </div>
@@ -917,7 +910,7 @@
                                         
                                     <div class="flex items-center gap-[5px]">
                                             
-                                        <div class="flex items-center justify-center gap-1 px-4 py-0.5 border border-darkGray rounded-m font-semibold text-xs rounded-md">
+                                        <div class="flex items-center justify-center gap-1 px-4 py-0.5 border border-button text-button rounded-m font-semibold text-xs rounded-md">
                                             {item.status} 
                                             {#if item.status === "UPCOMING"}
                                                 <div class="w-[13px] h-[13px] bg-[#EBB733] rounded-full">

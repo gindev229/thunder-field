@@ -883,7 +883,7 @@
                                     </div>
                                     <!--Card Info-->
                                     <div class="flex flex-col gap-[5px]">
-                                        <div class="font-bold orange-text loading min-w-[100px] min-h-[10px]">
+                                        <div class="font-bold text-button loading min-w-[100px] min-h-[10px]">
                                             
                                         </div>
                                         <div class="flex items-center gap-[5px]">
@@ -949,7 +949,7 @@
                                     </div>
                                     <!--Card Info-->
                                     <div class="flex flex-col gap-[5px]">
-                                        <div class="font-bold orange-text loading min-w-[100px] min-h-[10px]">
+                                        <div class="font-bold text-button loading min-w-[100px] min-h-[10px]">
                                             
                                         </div>
                                         <div class="flex items-center gap-[5px]">
@@ -1009,7 +1009,7 @@
                                             src="{config.rpcUrl}/cdn/nft/{activity.collection}/{activity.id}/200/200"
                                             on:load={()=>{ imgItemLoad = false}} alt="NFTs"/>
                                             <!--Items name-->
-                                            <div class="flex flex-col font-semibold orange-text">
+                                            <div class="flex flex-col font-semibold text-button">
                                                 <span class="text-lightGray"> 
                                                     #{activity.id}
                                                 </span>

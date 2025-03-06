@@ -254,7 +254,7 @@
                     }} class="flex items-center justify-start rounded-lg my-[5px] ml-[32px] mr-[30px] py-[7px] hover:bg-[#E8EBED] gap-[10px]">
                         <img src={`${config.rpcUrl}/logo/${searchResult.address}/200/200`} class="h-10 w-10 overflow-hidden rounded-full" alt="searched NFT"/>
                         
-                        <span class="font-semibold orange-text">
+                        <span class="font-semibold text-button">
                             {searchResult.name}
                         </span>
                     </button>
@@ -369,7 +369,7 @@
                     }} class="flex items-center justify-start rounded-lg my-[5px] ml-[32px] mr-[30px] py-[7px] hover:bg-black gap-[10px]">
                         <img src={`${config.rpcUrl}/logo/${searchResult.address}/200/200`} class="h-10 w-10 overflow-hidden rounded-full" alt="searched NFT"/>
                         
-                        <span class="font-semibold orange-text">
+                        <span class="font-semibold text-button">
                             {searchResult.name}
                         </span>
                     </button>
