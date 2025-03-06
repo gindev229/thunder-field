@@ -8,7 +8,9 @@
     import { erc721ABI, erc721Bytecode, marketplaceAddress, marketplaceABI, contractAddress,contractAbi  } from "$lib/contract.config.js";
     import { ethers } from "ethers";
     import config from "$lib/config.js";
-    import skillData from './data.json';
+    import { writable } from 'svelte/store';
+    export const skillData = writable([]);
+
     import './styles.css';
     import Loading from "$lib/Loading.svelte";
 
@@ -16,6 +18,7 @@
     let connectToMetamask;
     let navigation = "hall";
     let matchPopUp = false;
+    let challengePopUp = false;
     let rankMatchPopUp = false;
     let rankRewardPopup = false;
     let chainChoose = false;
@@ -38,6 +41,11 @@
     let inputStake;
 
     let withdrawList =[];
+    //
+    let selectedChallengeTarget = "";
+    let selectedChallengeId = "";
+    let selectedStakeDisplay;
+
     //pvp squad
     let squad = [{},{},{}];
     function chooseSquad(){
@@ -46,7 +54,6 @@
             squad[0].id = selected.id;
             squad = squad;
             
-            console.log(squad[0].id )
         }
         else if(!squad[1].id)
         {   squad[1].collection = selected.collection; 
@@ -72,7 +79,6 @@
             rankSquad[0].id = selectedRank.id;
             rankSquad = rankSquad;
             
-            console.log(squad[0].id )
         }
         else if(!rankSquad[1].id)
         {   rankSquad[1].collection = selectedRank.collection; 
@@ -85,7 +91,6 @@
             rankSquad[2].id = selectedRank.id;
             rankSquad = rankSquad;
         }
-        console.log(selectedAtributes,"selectedAtributes");
     }
 
     let passHold = "";
@@ -97,7 +102,18 @@
     // Example of using the data
     let effect = '';
     function getEffect(collections, attribute) {
-        const item = skillData.find(item => item.collections === collections && item.attribute === attribute);
+    let currentSkillData = [];
+    
+    // Get the current value from the store
+        const unsubscribe = skillData.subscribe(value => {
+            currentSkillData = value || [];
+        });
+        unsubscribe(); // Unsubscribe immediately after getting the value
+        
+        const item = Array.isArray(currentSkillData) 
+            ? currentSkillData.find(item => item.collections === collections && item.attribute === attribute)
+            : null;
+            
         effect = item ? item.desc : 'Effect not found';
         return effect;
     }
@@ -255,23 +271,20 @@
             // Get nfts that user owns
             try {
                 await (async function() {
-                    // Get the nft list in local storage
                     try {
                         const localNFTList = JSON.parse(localStorage.nftList || "[]");
                         const requests = [];
-                        console.log(localNFTList, "1111111111111111111111111111111")
                         // Check if user is still the owner
                         for (const nft of localNFTList) {
                             requests.push((async () => {
                                 const { owner, lister } = await getNFTOwner(nft.collectionAddress, nft.id);
-                                /*
+                                
                                 if (owner !== userAddress && lister !== userAddress) {
                                     return;
-                                }*/
+                                }
 
                                 nftList.push(nft);
                                 nftList = nftList;
-                                console.log(nftList, "nftListyyyyyyyyyyyyyyyyyyyyyyyyyyy")
                             })());
                         }
 
@@ -318,13 +331,11 @@
             } catch (e) {}
 
         const excludedAddresses = [
-            "0x373521e5530dAC6D54B1afd0DD16C37Df41c8200",
-            "0xF474423749eB320f48359AB8a44CE90F46c859c2",
-            "0x9c2bf93A7D29fa6f367ad641E411e1fD2B9C6833",
+            "",
+            ""
         ];
 
         nftList = nftList.filter(nft => !excludedAddresses.includes(nft.collectionAddress));
-            // Load the first batch of nfts
             loadNFTs(nftList);
 
            
@@ -340,7 +351,6 @@
 
                 nfts.push(id);
             }
-            console.log(nfts, "nftsnftsnftsnfts")
 
             try {
                 const curatedNFTs = nfts.filter(id => typeof id !== "undefined" && id !== null);
@@ -375,8 +385,8 @@
         await getAllBattleHistory();
         await getUserQuests();
         await getRankUserProfile();
-        await getRankAndNearby();
         await getWithdrawList(address);
+        await fetchSkillData();
     });
 
 
@@ -426,13 +436,78 @@
         return attributeList; // Returns array of values from first NFT
     }
 
+    async function fetchSkillData() {
+        try {
+            const response = await fetch(config.rpcUrl, {
+                method: "POST",
+                body: JSON.stringify({
+                    method: "getSkillData",
+                    params: {}
+                }),
+                headers: {
+                    "Content-Type": "application/json"
+                }
+            });
 
-    //////////////////////ALL GAME FUNCTION///////////////////////////////////////////////////////////////////////////
+            
+            if (!response.ok) {
+                const responseBody = await response.json();
+                throw new Error(responseBody.error?.message || "Failed to get skill data");
+            }
+
+            const responseBody = await response.json();
+            
+            if (!responseBody.success || !responseBody.payload || !responseBody.payload.data) {
+                
+                if (Array.isArray(responseBody)) {
+                    const data = responseBody;
+                    skillData.set(data);
+                    return data;
+                }
+                
+                if (responseBody.data && Array.isArray(responseBody.data)) {
+                    skillData.set(responseBody.data);
+                    return responseBody.data;
+                }
+                
+                if (responseBody.payload && Array.isArray(responseBody.payload)) {
+                    skillData.set(responseBody.payload);
+                    return responseBody.payload;
+                }
+                
+                if (responseBody.result && Array.isArray(responseBody.result)) {
+                    skillData.set(responseBody.result);
+                    return responseBody.result;
+                }
+                
+                throw new Error("Invalid response format from server");
+            }
+            
+            const responseData = responseBody.payload.data;
+            
+            // Handle both array response and ["skillData", spellData] format
+            if (Array.isArray(responseData)) {
+                if (responseData[0] === "skillData" && Array.isArray(responseData[1])) {
+                    skillData.set(responseData[1]);
+                    return responseData[1];
+                } else {
+                    skillData.set(responseData);
+                    return responseData;
+                }
+            }
+            
+            console.error("Unexpected response format:", responseData);
+            throw new Error("Unrecognized data format");
+            
+        } catch (error) {
+            console.error("Error fetching skill data:", error);
+            throw error;
+        }
+    }
 
 
-    //Load all map in UI
+   
     async function getMatches() {
-        // Receive available matches
         const response = await fetch(config.rpcUrl, {
             method: "POST",
             body: JSON.stringify({
@@ -452,7 +527,6 @@
             }
         
             matches = responseBody.payload.data[1];
-            console.log(matches, "matches")
         } else {
             const responseBody = await response.json();
 
@@ -462,17 +536,14 @@
         }
     }; 
 
-    // Create a Match
     async function loadQueue(nfts, address, value) {
         popupLoading = true;
-        // Validate inputs
         if (!nfts?.length) {
             popupLoading = false;
             return;
             
         }
         
-        // Validate value is greater than 0
         const floatValue = parseFloat(value);
         if (isNaN(floatValue) || floatValue <= 0) {
             popupLoading = false;
@@ -481,7 +552,6 @@
             return;
         }
 
-        // Get attributes of nfts
         const filteredNfts = nfts.map(nft => ({ collectionAddress: nft.collection, id: nft.id }));
         const attributeList = await getAttributes(filteredNfts);
         const finalNfts = [];
@@ -493,15 +563,13 @@
             });
         }
         
-        console.log(finalNfts, "finalNftsfinalNfts")
-        // STEP 1: Initialize battle on backend and get battleID
         const initialResponse = await fetch(config.rpcUrl, {
             method: "POST",
             body: JSON.stringify({
                 method: "loadQueue",
                 params: {
                     daddress: address,
-                    value: floatValue, // FIX: Send float value instead of integer
+                    value: floatValue,
                     matchBody: {
                         nfts: finalNfts
                     }
@@ -521,9 +589,7 @@
             return;
         }
         const responseBody = await initialResponse.json();
-        console.log(responseBody, "responseBody");
 
-        // FIX: Correctly access the nested response data
         if (!responseBody.success || !responseBody.payload || !responseBody.payload.data) {
             popupLoading = false;
             generalError = true;
@@ -532,9 +598,7 @@
         }
 
         const responseData = responseBody.payload.data;
-        console.log(responseData, "responseData")
         
-        // Only proceed if we get the expected response
         if (responseData[0] !== "pendingBattle") {
             popupLoading = false;
             generalError = true;
@@ -545,16 +609,12 @@
         const { battleID, value: confirmedValue } = responseData[1];
 
         try {
-            // STEP 2: Call contract function to create the battle and lock funds
             const valueToUse = parseFloat(confirmedValue.toString());
             
-            // Convert value to proper format for contract (v5 syntax)
             const valueInWei = ethers.utils.parseEther(valueToUse.toString());
             
-            // Create battle in contract
             const tx = await prizePoolContract.create(battleID, { value: valueInWei });
             
-            // STEP 3: Immediately send transaction hash to backend
             await fetch(config.rpcUrl, {
                 method: "POST",
                 body: JSON.stringify({
@@ -569,10 +629,8 @@
                 }
             });
             
-            // STEP 4: Wait for transaction to complete with better error handling
             try {
                 const receipt = await tx.wait();
-                // Check receipt status for transaction success
                 if (receipt.status !== 1) {
                     popupLoading = false;
                     generalError = true;
@@ -587,7 +645,6 @@
                 throw new Error("Transaction failed: " + (error.message || "Unknown error"));
             }
             
-            // STEP 5: Notify backend of completion
             const finalResponse = await fetch(config.rpcUrl, {
                 method: "POST",
                 body: JSON.stringify({
@@ -609,7 +666,6 @@
                 throw new Error(responseBody.error?.message || "Failed to finalize battle creation");
             }
             popupLoading = false;
-            // Reload page to show the created battle
             location.reload();
             
         } catch (error) {
@@ -619,7 +675,6 @@
     }
 
     async function challenge(nfts, caddress, daddress, battleID) {
-        // Validate inputs
         checkSquad();
         if (!nfts?.length) {
             popupLoading = false;
@@ -629,7 +684,6 @@
         }
         popupLoading = true;
 
-        // Get attributes of nfts
         const filteredNfts = nfts.map(nft => ({ collectionAddress: nft.collection, id: nft.id }));
         const attributeList = await getAttributes(filteredNfts);
         
@@ -642,7 +696,6 @@
             });
         }
         
-        // STEP 1: Verify battle and simulate combat
         const initialResponse = await fetch(config.rpcUrl, {
             method: "POST",
             body: JSON.stringify({
@@ -678,16 +731,12 @@
         }
         const responseData = responseBody.payload.data;
 
-        // STEP 2: If it's a tie, proceed directly to battle page
         if (responseData[0] === "tie") {
-            console.log("Battle resulted in a tie");
             goto("./nftarena/battle");
             return;
         }
         
-        // For non-tie results, proceed with contract interaction
         if (responseData[0] !== "challengeWithDeposit") {
-            console.log(responseData[0],"responseData");
             popupLoading = false;
             generalError = true;
             generalErrorValue = "Unexpected response from server";
@@ -697,16 +746,12 @@
         const battleInfo = responseData[1];
         
         try {
-            // STEP 3: Call contract function to join battle
             
             const valueToUse = parseFloat(battleInfo.value.toString());
-            // Convert value to proper format for contract (v5 syntax)
             const valueInWei = ethers.utils.parseEther(valueToUse.toString());
             
-            // Join battle in contract
             const tx = await prizePoolContract.join(battleInfo.battleID, { value: valueInWei });
             
-            // STEP 4: Immediately send transaction hash to backend
             await fetch(config.rpcUrl, {
                 method: "POST",
                 body: JSON.stringify({
@@ -721,10 +766,8 @@
                 }
             });
             
-            // STEP 5: Wait for transaction to complete with better error handling
             try {
                 const receipt = await tx.wait();
-                // Check receipt status for transaction success
                 if (receipt.status !== 1) {
                     popupLoading = false;
                     generalError = true;
@@ -739,7 +782,6 @@
                 throw new Error("Transaction failed: " + (error.message || "Unknown error"));
             }
             
-            // STEP 6: Notify backend of completion
             const finalResponse = await fetch(config.rpcUrl, {
                 method: "POST",
                 body: JSON.stringify({
@@ -762,8 +804,6 @@
             }
             popupLoading = false;
             
-            // Navigate to battle page
-            console.log("Challenge completed, going to battle page");
             goto("./nftarena/battle");
             
         } catch (error) {
@@ -809,8 +849,6 @@
                 throw new Error(`Unexpected response from server: ${responseData[0]}`);
             }
             
-            // Return the list of claimable battles
-            console.log(responseData[1], "withdrawList")
             withdrawList = [...responseData[1]];
             return responseData[1];
             
@@ -820,14 +858,10 @@
         }
     }
 
-    // Function to claim winnings from a battle
     async function claimBattleWinnings(address, battleID) {
         try {
             popupLoading = true;
-            // 1. Log the current contract nonce for debugging
             const currentNonce = await prizePoolContract.nonce();
-            console.log("Current nonce from contract:", currentNonce.toString());
-            // STEP 1-4: Get signature from backend
             const claimResponse = await fetch(config.rpcUrl, {
                 method: "POST",
                 body: JSON.stringify({
@@ -852,19 +886,14 @@
 
             const responseBody = await claimResponse.json();
             
-            // Access the nested response data
             if (!responseBody.success || !responseBody.payload || !responseBody.payload.data) {
                 popupLoading = false;
                 generalError = true;
                 generalErrorValue = "Invalid response format from server";
                 throw new Error("Invalid response format from server");
             }
-            console.log("Full response from server:", responseBody);
             const responseData = responseBody.payload.data;
-            console.log(responseData, "responseData")
-            // Verify response type
             if (responseData[0] !== "claimSignature") {
-                console.log(responseData, "responseData")
                 popupLoading = false;
                 generalError = true;
                 generalErrorValue = "Invalid response format from server";
@@ -873,19 +902,15 @@
             
             const { signature } = responseData[1];
             
-            // STEP 5: Call contract claim function with signature
             const tx = await prizePoolContract.claim(
                 battleID,
                 signature.r,
                 signature.s,
                 signature.v,
                 {
-                    gasLimit: 2000000, // Add explicit gas limit
+                    gasLimit: 120000, 
                 }
             );
-            console.log("Transaction sent:", tx.hash);
-            
-            // STEP 6: Immediately send transaction hash to backend
             await fetch(config.rpcUrl, {
                 method: "POST",
                 body: JSON.stringify({
@@ -901,8 +926,6 @@
                 }
             });
             
-            // STEP 8: Wait for transaction to complete
-            console.log("Waiting for transaction confirmation...");
             try {
                 const receipt = await tx.wait();
                 if (receipt.status !== 1) {
@@ -919,7 +942,6 @@
                 throw new Error("Transaction failed: " + (error.message || "Unknown error"));
             }
             
-            // Notify backend of successful completion
             const finalResponse = await fetch(config.rpcUrl, {
                 method: "POST",
                 body: JSON.stringify({
@@ -941,8 +963,6 @@
                 throw new Error(responseBody.error?.message || "Failed to finalize claim");
             }
             
-            // Update UI or navigate
-            console.log("Claim completed successfully");
             popupLoading = false;
             await getWithdrawList(address);
             return true;
@@ -955,14 +975,11 @@
         }
     }
 
-    // Function to delist a battle
     async function delistBattle(address, battleID) {
         popupLoading = true;
         try {
-            // STEP 1: Call contract delist function
             const tx = await prizePoolContract.delist(battleID);
             
-            // STEP 2: Immediately send transaction hash to backend
             await fetch(config.rpcUrl, {
                 method: "POST",
                 body: JSON.stringify({
@@ -978,7 +995,6 @@
                 }
             });
             
-            // STEP 4: Wait for transaction to complete
             try {
                 const receipt = await tx.wait();
                 if (receipt.status !== 1) {
@@ -995,7 +1011,6 @@
                 throw new Error("Transaction failed: " + (error.message || "Unknown error"));
             }
             
-            // Notify backend of successful completion
             const finalResponse = await fetch(config.rpcUrl, {
                 method: "POST",
                 body: JSON.stringify({
@@ -1047,12 +1062,11 @@
 
             if (response.ok) {
                 const responseBody = await response.json();
-            
-                battleProfile = responseBody.payload.data[1]
+                battleProfile = responseBody.payload.data[1];
+
                 challengeHistory = battleProfile.challengeHistory
                 defendHistory = battleProfile.defendHistory
                 battleHistory = [...challengeHistory,...defendHistory]
-                
                 challengePerDay =   battleProfile.stats.challengePerDay
                 challengeUsed = battleProfile.stats.challengeUsed;
 
@@ -1103,7 +1117,6 @@
     
     async function getUserQuests() {
     try {   
-            console.log("getUserQuests")
             const response = await fetch(config.rpcUrl, {
                 method: 'POST',
                 headers: {
@@ -1171,121 +1184,13 @@
         }
     }
 
-    /////////////////////////////////////////////////////////RANK/////////////////////////////////////////////////
-    async function enterRank(nfts, address) {
-        // Get attributes of nfts
-        const filteredNfts = nfts.map(nft => ({ collectionAddress: nft.collection, id: nft.id }));
-        const attributeList = await getAttributes(filteredNfts);
-        const finalNfts = [];
-        for (let i = 0; i < attributeList.length; i++) {
-            finalNfts.push({
-                collection: nfts[i].collection,
-                id: parseInt(nfts[i].id),
-                attributes: attributeList[i]
-            });
-        }
-        console.log(finalNfts,"finalRankNfts");
-        // Receive available matches
-        const response = await fetch(config.rpcUrl, {
-            method: "POST",
-            body: JSON.stringify({
-                method: "enterRank",
-                params: {
-                    address,
-                    rankSquad: finalNfts
-                }
-            }),
-            headers: {
-                "Content-Type": "application/json"
-            }
-        });
-
-        if (response.ok) {
-            const responseBody = await response.json();
-            rankMatchPopUp = false;
-            window.reload();
-        } else {
-            const responseBody = await response.json();
-
-            if (responseBody.error && responseBody.error.message) {
-                throw new Error(responseBody.error.message);
-            }
-        }
-    }
-
-    async function changeRankSquad(nfts, address) {
-        // Get attributes of nfts
-        const filteredNfts = nfts.map(nft => ({ collectionAddress: nft.collection, id: nft.id }));
-        const attributeList = await getAttributes(filteredNfts);
-        const finalNfts = [];
-        for (let i = 0; i < attributeList.length; i++) {
-            finalNfts.push({
-                collection: nfts[i].collection,
-                id: parseInt(nfts[i].id),
-                attributes: attributeList[i]
-            });
-        }
-        console.log(finalNfts,"finalRankNfts");
-        // Receive available matches
-        const response = await fetch(config.rpcUrl, {
-            method: "POST",
-            body: JSON.stringify({
-                method: "changeRankSquad",
-                params: {
-                    address,
-                    rankSquad: finalNfts
-                }
-            }),
-            headers: {
-                "Content-Type": "application/json"
-            }
-        });
-
-        if (response.ok) {
-            const responseBody = await response.json();
-            rankMatchPopUp = false;
-            location.reload();
-        } else {
-            const responseBody = await response.json();
-
-            if (responseBody.error && responseBody.error.message) {
-                throw new Error(responseBody.error.message);
-            }
-        }
-    }
 
     let rankAndNearbys = [];
 
-    async function getRankAndNearby() {
-        // Receive available matches
-        const response = await fetch(config.rpcUrl, {
-            method: "POST",
-            body: JSON.stringify({
-                method: "getRankAndNearby",
-                params:{
-                    address: userAddress
-                }
-            }),
-            headers: {
-                "Content-Type": "application/json"
-            }
-        });
 
-        if (response.ok) {
-            const responseBody = await response.json();
-            rankAndNearbys = responseBody.payload.data[1];
-            rankAndNearbys = rankAndNearbys;
-        } else {
-            const responseBody = await response.json();
-
-            if (responseBody.error && responseBody.error.message) {
-                throw new Error(responseBody.error.message);
-            }
-        }
-    }; 
 
     let rankUserProfile = {
-        rankSquad: [],  // Initialize with empty array
+        rankSquad: [], 
         userAddress: ""
     };
 
@@ -1295,7 +1200,6 @@
     let rankBattleHistories = [];
 
     async function getRankUserProfile() {
-        // Receive available matches
         const response = await fetch(config.rpcUrl, {
             method: "POST",
             body: JSON.stringify({
@@ -1312,7 +1216,6 @@
         if (response.ok) {
             const responseBody = await response.json();
             rankUserProfile = responseBody.payload.data[1];
-            console.log(rankUserProfile, "rankUserProfilerankUserProfile")
             rankUserProfile = rankUserProfile;
             challengeRankUsed = rankUserProfile.challengesUsed;
             challengeRankPerDay = rankUserProfile.totalChallengesPerDay;
@@ -1321,9 +1224,7 @@
 
             rankBattleHistories = rankUserProfile.battleHistory;
             rankBattleHistories = [...rankBattleHistories]
-            console.log(rankBattleHistories, "rankBattleHistories")
         
-            console.log("rankUserProfile",rankUserProfile);
         } else {
             const responseBody = await response.json();
 
@@ -1334,7 +1235,6 @@
     }; 
 
     async function rankChallenge(caddress, daddress) {     
-        // Receive available matches
         const response = await fetch(config.rpcUrl, {
             method: "POST",
             body: JSON.stringify({
@@ -1352,7 +1252,6 @@
         if (response.ok) {
             const responseBody = await response.json();
 
-            console.log(responseBody);
     
             goto("./nftarena/rankBattle");
         } else {
@@ -1363,7 +1262,6 @@
             }
         }
     }
-    /////////////////////////////////////Check error on front-end/////////////////////////////////////////////
     let error = false;
     let errorOutChallenge;
 
@@ -1422,12 +1320,10 @@
         }
     }, 100);
 
-    ////////////////////////////////////////////////////////////////
     
     let loadingItems1 = [{},{},{},{},{}];
     let loadingItems2 = [{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{}];;
 
-    //Copy form old pvp page
     let totalSeconds, totalMinutes , totalHours, totalDays;
     let deadline = 1735650000000;
     let deadline2 = 1735650000000;
@@ -1469,7 +1365,6 @@
     }
 
 
-    // Function to dynamically format time left based on the remaining duration
     function formatTimeLeft(milliseconds) {
         totalSeconds = Math.floor(milliseconds / 1000);
         totalMinutes = Math.floor(totalSeconds / 60);
@@ -1484,7 +1379,6 @@
         } else {totalDays = totalDays}
     }
 
-    // Trigger updates date now second
     let dateNow;
     let resetChallengeHours = 0;
     let resetChallengeMinutes = 0;
@@ -1493,12 +1387,12 @@
         dateNow = Date.now();
         formatTimeLeft(deadline - dateNow);
         formatTimeLeftBattle(deadline2 - dateNow);
-        getTimeUntilReset();  // Just call it without parameters
+        getTimeUntilReset(); 
     }, 1000);
 
     function getTimeUntilReset() {
         const now = new Date();
-        const targetHour = 14; // 2 PM UTC
+        const targetHour = 14; 
         
         let targetDate = new Date();
         targetDate.setUTCHours(targetHour, 0, 0, 0);
@@ -1509,7 +1403,6 @@
         
         const diff = targetDate.getTime() - now.getTime();
         
-        // Just update the global variables directly
         resetChallengeHours = Math.floor(diff / (1000 * 60 * 60));
         resetChallengeMinutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
     }
@@ -1522,23 +1415,19 @@
         maxHp: false
     };
     let name=[{},{}]
-    // Get collection name helper
     function getNameByCollection2(collection) {
         const found = name.find(item => item.collection === collection);
         return found ? found.name : collection;
     }
 
-    // Toggle filter function
     function toggleFilter(name) {
         filters[name] = !filters[name];
-        filters = filters; // trigger reactivity
+        filters = filters; 
     }
 
-  // Computed filtered skills
-    $: filteredSkills = skillData.filter(skill => {
-        const collectionName = getNameByCollection2(skill.collections);
+    $: filteredSkills = Array.isArray($skillData) 
+    ? $skillData.filter(skill => {
         const searchMatch = !searchTerm || 
-            collectionName.toLowerCase().includes(searchTerm.toLowerCase()) ||
             skill.collections.toLowerCase().includes(searchTerm.toLowerCase());
 
         const damageMatch = !filters.damage || skill.dmg !== 0;
@@ -1547,14 +1436,14 @@
         const maxHpMatch = !filters.maxHp || skill.hpChange !== 0;
 
         return searchMatch && damageMatch && resMatch && healMatch && maxHpMatch;
-    });
+    }) 
+    : [];
 
     function calculateTotalWithdrawable() {
         if (!withdrawList || withdrawList.length === 0) {
             return 0;
         }
         
-        // Sum up all values in the withdrawList
         return withdrawList.reduce((total, item) => total + (item.value * 2), 0);
     }
 </script>
@@ -1618,11 +1507,11 @@
                                             <div class="w-[20%]">
                                                 {#if address !== match.daddress}
                                                     <button on:click={() => {
-                                                        checkSquad();
-                                                        checkOutChallenge();
-                                                        if (!error&&!errorOutChallenge) {
-                                                            challenge(squad, address, match.daddress, match.battleID);
-                                                        }
+                                                        selectedChallengeTarget = match.daddress;
+                                                        selectedChallengeId = match.battleID;
+                                                        selectedStakeDisplay = match.value;
+                                                        challengePopUp = true;
+
                                                     }} class="flex gap-[0.5vw] w-full justify-center items-center text-green hover:text-button">
                                                         <img src="/game/ui/fight.svg" alt="sword icon" class="h-[1.5vw]"/>
                                                         <span class="text-[1vw] ">
@@ -1710,18 +1599,27 @@
                                                     <div class="text-red-700 mr-[1vw]">
                                                         Lost
                                                     </div>
+                                                {:else if battle.winner === -1}
+                                                    <div class="text-white mr-[1vw]">
+                                                        Draw
+                                                    </div>
                                                 {/if}
                                                 <span class="underline">
                                                     You challenge <span class="text-button">{emitBetweenText(battle.defenderAddress, 10)}</span>
                                                 </span>
                                                 {#if battle.winner === 1}
                                                     <div class="flex gap-[0.2vw] items-center ml-[2vw]">
-                                                        <span class=" font-semibold text-white">+ 0</span>
+                                                        <span class=" font-semibold text-white">+ {battle.stake}</span>
                                                         <img class="h-[1vw]" alt="currency" src="/icons/ETN.png"/>
                                                     </div>
                                                 {:else if battle.winner === 2}
                                                     <div class="flex gap-[0.2vw] items-center ml-[2vw]">
-                                                        <span class=" font-semibold text-white">- 0</span>
+                                                        <span class=" font-semibold text-white">- {battle.stake}</span>
+                                                        <img class="h-[1vw]" alt="currency"  src="/icons/ETN.png"/>
+                                                    </div>
+                                                {:else if battle.winner === -1}
+                                                    <div class="text-white mr-[1vw]">
+                                                        <span class=" font-semibold text-white">0</span>
                                                         <img class="h-[1vw]" alt="currency"  src="/icons/ETN.png"/>
                                                     </div>
                                                 {/if}
@@ -1737,19 +1635,28 @@
                                                 <div class="text-red-700 mr-[1vw]">
                                                     Lost
                                                 </div>
+                                            {:else if battle.winner === -1}
+                                                <div class="text-white mr-[1vw]">
+                                                    Draw
+                                                </div>
                                             {/if}
                                             <span class="underline">
                                                 You defend <span class="text-button">{emitBetweenText(battle.challengerAddress, 10)}</span>
                                             </span>
                                             {#if battle.winner === 2}
                                                 <div class="flex gap-[0.2vw] items-center ml-[2vw]">
-                                                    <span class=" font-semibold text-white">+ 0</span>
+                                                    <span class=" font-semibold text-white">+ {battle.stake}</span>
                                                     <img class="h-[1vw]" alt="currency" src="/icons/ETN.png"/>
                                                 </div>
                                             {:else if battle.winner === 1}
                                                 <div class="flex gap-[0.2vw] items-center ml-[2vw]">
-                                                    <span class=" font-semibold text-white">- 0</span>
+                                                    <span class=" font-semibold text-white">- {battle.stake}</span>
                                                     <img class="h-[1vw]" alt="currency" src="/icons/ETN.png"/>
+                                                </div>
+                                            {:else if battle.winner === -1}
+                                                <div class="text-white mr-[1vw]">
+                                                    <span class=" font-semibold text-white">0</span>
+                                                    <img class="h-[1vw]" alt="currency"  src="/icons/ETN.png"/>
                                                 </div>
                                             {/if}
                                             <span class="self-end text-[0.8vw] text-darkGray w-[6vw]">
@@ -1924,7 +1831,7 @@
                             <div class="flex gap-[0.5vw]">
                                 <button 
                                     class=" w-[4vw] justify-center rounded-md flex items-center border-[0.2vw] border-arenaLight {filters.damage ? 'bg-black' : 'bg-arenaDark'}"
-                                    on:click={() => {toggleFilter('damage'); console.log(filters)}}
+                                    on:click={() => {toggleFilter('damage')}}
                                 >
                                     <img class="h-[1.5vw]" src="game/ui/dame.svg" alt="dame filter"/>
                                 </button>
@@ -1977,7 +1884,7 @@
                                 {#each filteredSkills as skill}
                                     <div class="flex items-center gap-[0.5vw] w-full hover:text-yellow-400">
                         
-                                        <div class="w-[20%]">example name</div>
+                                        <div class="w-[20%]">{emitBetweenText(skill.collections,10)}</div>
                                         <div class="w-[30%]">{skill.attribute}</div>
                                         <div class="w-[50%]">
                                             {skill.desc}
@@ -1986,7 +1893,7 @@
                                 {/each} 
                             </div>
                         </div>
-                        <button class="flex self-center mt-[0.5vw] p-[0.5vw] rounded-md bg-arenaMedium w-fit text-white border border-button hover:border-buttonHover">
+                        <button on:click={()=>{goto("./nftarena/importnft")}} class="flex self-center mt-[0.5vw] p-[0.5vw] rounded-md bg-arenaMedium w-fit text-white border border-button hover:border-buttonHover" >
                                 Import NFT
                         </button>
                     </div>
@@ -2104,7 +2011,6 @@
                                             <div class="w-[5vw] h-[5vw] bg-black">
                                                 <img class="bg-black w-[5vw] h-[5vw]" src={`${config.rpcUrl}/cdn/nft/${selected.collection}/${selected.id}/200/200`}/>
                                             </div>
-                                            <!---->
                                             <div class="flex flex-col justify-center gap-[10px]">
                                                 <span class="text-arenaLight">
                                                     From <span class="text-button font-thin"> {selectedCollectionName}</span>
@@ -2115,7 +2021,6 @@
                                             </div>
                                         </div>
                                         <div class="flex flex-col bg-arenaDark p-[1vw] text-arenaLight rounded-md mt-[1vw] gap-[1vw] max-h-[15vw] min-h-[15vw] overflow-y-scroll">
-                                            <!-- skill-->
                                             {#each showSelectedAtributes as showSelectedAtribute}
                                                 <div class="flex flex-col">
                                                     <span>
@@ -2168,7 +2073,184 @@
                     </div>
                 </div>
             {/if}
+            
+            {#if challengePopUp}
+                <div class="absolute font-semibold flex flex-col items-center inset-0 bg-black bg-opacity-70 z-30 text-white z-10 w-full" in:fade={{ duration: 200 }} out:fade={{ duration: 200 }}>
+                    <div class ="relative flex flex-col mt-[2vw]  pt-[1vw] pb-[1vw] px-[2vw] bg-arenaBg rounded-md w-[86vw]">
+                        <button class="self-end" on:click={()=>{ challengePopUp = false; selectedChallengeTarget = ""; selectedChallengeId=""; selectedStakeDisplay = "";}}>
+                            <img class="absolute h-[3vw] inline-block right-[1vw]" alt="close icon" src="/game/ui/close.svg"/>
+                        </button>
+                        <!---->
+                        <div class="grid grid-cols-10 gap-[2vw] w-full">
+                            <div class="col-span-6 flex flex-col rounded-md p-[0.5vw] gap-[0.5vw]">
+                                <span class="text-[1.3vw]">
+                                    Choose your NFT
+                                </span>
+                                <span class="text-[1vw] font-normal text-white">
+                                    You can choose duplicated NFTs
+                                </span>
+                                <!--NFT places-->
+                                <div class="flex flex-col border-[0.3px] border-arenaLight rounded-md">
+                                    <div class="flex flex-wrap rounded-md justify-start min-h-[16vw] max-h-[16vw] overflow-y-scroll bg-arenaDark gap-x-[0.5vw] p-[1vw]">
+                                        <!--Example-->
+                                        {#if items.length >0 && !loading}
+                                            <div class="flex flex-wrap gap-[0.5vw] justify-start items-start gap-y-[0.1vw]">
+                                                {#each items as item}  
+                                                    <button on:click={async () => {
+                                                        selected.id = item.id;
+                                                        selected.collection = item.collection;
+                                                        chooseSquad();
+                                                        x = await getAttributes([{ collectionAddress: selected.collection, id: selected.id  }]);
+                                                        showSelectedAtributes  = x[0];
+                                                    }} class="flex bg-black hover:border border-yellow h-fit rounded-md overflow-hidden">
+                                                        <img alt="NFT" class="bg-black w-[5vw] h-[5vw] object-cover" src={`${config.rpcUrl}/cdn/nft/${item.collection}/${item.id}/200/200`}/>
+                                                    </button>
+                                                {/each}
+                                            </div>                          
+                                        {:else if loading }
+                                            {#each loadingItems1 as loadItem} 
+                                            <div class="loading w-[5vw] h-[5vw] ">
+        
+                                            </div>
+                                            {/each}
+                                        {:else if items.length ===0}
+                                            <div class="flex flex-col text-white m-auto items-center">
+                                                <span class="text-arenaLight">Looks like you don't have any NFTs to battle with</span>
+                                                <div class="flex items-center gap-[1vw]">
+                                                    <div class="flex items-center gap-[1vw]">
+                                                        <button class="flex self-center p-[0.3vw] rounded-md bg-button hover:bg-buttonHover w-fit text-white text-[0.8vw]"
+                                                        on:click={()=>{goto("./nftarena/importnft")}}>
+                                                            Import & Generate skills for your NFT
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        {/if}
+                                    </div>
+                                    <div class="flex items-center py-[0.5vw] bg-arenaMedium">
+                                        <span class="text-[1.3vw] ml-[3vw] mr-[4vw]">
+                                            My Squad
+                                        </span>
+                                        <!--Squad-->
+                                        <div class="flex justify-center gap-[2vw] rounded-md">
+                                            <!--1-->
+                                            {#if squad[0].id}
+                                                <button class="flex relative shadow-md rounded-md overflow-hidden" on:click={()=>{squad[0] = {}; squad = squad}} in:fade={{ duration: 300 }} >
+                                                    <div class="hover:opacity-70 opacity-0 flex absolute bg-black justify-center items-center w-[5vw] h-[5vw] z-10">
+                                                        <img class="w-[3vw] h-[3vw]" alt="close icon" src="/game/ui/close.svg"/>
+                                                    </div>
+                                                    <img class="bg-black w-[5vw] h-[5vw]" src={`${config.rpcUrl}/cdn/nft/${squad[0].collection}/${squad[0].id}/200/200`}/>
+                                                </button>
+                                            {:else}
+                                                <div class="flex">
+                                                    <img class="w-[5vw] h-[5vw]"  alt="empty slot" src="/game/ui/emptySlot.svg"/>
+                                                </div>
+                                            {/if}
+                                            <!--2-->
+                                            {#if squad[1].id}
+                                                <button class="flex relative shadow-md rounded-md overflow-hidden" on:click={()=>{squad[1] = {}; squad = squad}} in:fade={{ duration: 300 }} >
+                                                    <div class="hover:opacity-70 opacity-0 flex absolute bg-black justify-center items-center w-[5vw] h-[5vw] z-10">
+                                                        <img class="w-[3vw] h-[3vw]" alt="close icon" src="/game/ui/close.svg"/>
+                                                    </div>
+                                                    <img class="bg-black w-[5vw] h-[5vw]" src={`${config.rpcUrl}/cdn/nft/${squad[1].collection}/${squad[1].id}/200/200`}/>
+                                                </button>
+                                            {:else}
+                                                <div class="flex">
+                                                    <img class="w-[5vw] h-[5vw]" alt="empty slot" src="/game/ui/emptySlot.svg"/>
+                                                </div>
+                                            {/if}
+                                            <!--3-->
+                                            {#if squad[2].id}
+                                                <button class="flex relative shadow-md rounded-md overflow-hidden" on:click={()=>{squad[2] = {}; squad = squad}} in:fade={{ duration: 300 }} >
+                                                    <div class="hover:opacity-70 opacity-0 flex absolute bg-black justify-center items-center w-[5vw] h-[5vw] z-10">
+                                                        <img class="w-[3vw] h-[3vw]" alt="close icon" src="/game/ui/close.svg"/>
+                                                    </div>
+                                                    <img class="bg-black w-[5vw] h-[5vw]" src={`${config.rpcUrl}/cdn/nft/${squad[2].collection}/${squad[2].id}/200/200`}/>
+                                                </button>
+                                            {:else}
+                                                <div class="flex">
+                                                    <img class="w-[5vw] h-[5vw]"  alt="empty slot" src="/game/ui/emptySlot.svg"/>
+                                                </div>
+                                            {/if}
+                                        </div>
+                                    </div>
 
+                                </div>
+
+                            </div>
+                            <div class="col-span-4 flex flex-col rounded-md justify-end" >
+                                {#if selected.id}
+                                    <div class="flex flex-col p-[1vw] bg-arenaMedium rounded-md" in:slide={{ duration: 300 }}>
+                                        <div class="flex gap-[1vw]">
+                                            <div class="w-[5vw] h-[5vw] bg-black">
+                                                <img class="bg-black w-[5vw] h-[5vw]" src={`${config.rpcUrl}/cdn/nft/${selected.collection}/${selected.id}/200/200`}/>
+                                            </div>
+                                            <div class="flex flex-col justify-center gap-[10px]">
+                                                <span class="text-arenaLight">
+                                                    From <span class="text-button font-thin"> {selectedCollectionName}</span>
+                                                </span>
+                                                <span class=" font-semibold">
+                                                    #{selected.id}
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div class="flex flex-col bg-arenaDark p-[1vw] text-arenaLight rounded-md mt-[1vw] gap-[1vw] max-h-[15vw] min-h-[15vw] overflow-y-scroll">
+                                            {#each showSelectedAtributes as showSelectedAtribute}
+                                                <div class="flex flex-col">
+                                                    <span>
+                                                        <span class="text-button">
+                                                            {showSelectedAtribute}
+                                                        </span>
+                                                    </span>
+                                                    <span class="text-[0.8vw] font-medium">
+                                                        Encounter Rate:
+                                                        <span class="text-white">
+                                                            {(100/showSelectedAtributes.length).toFixed(2)}%
+                                                        </span>
+                                                    </span>
+                                                    <span class="text-[0.8vw] text-white font-medium ml-[1vw]">
+                                                        {getEffect(selected.collection,showSelectedAtribute)}  
+                                                    </span>
+                                                </div>
+                                            {/each}
+                        
+                                        </div>
+                                    </div>
+                                {/if}
+                            </div>
+                        </div>
+                        <!--Stake-->
+                        <div class="flex gap-[1vw] self-center w-fit items-center justify-center gap-[0.3vw] font-normal my-[1.5vw]">
+                            <div class="flex gap-[0.6vw] text-[1.1vw] px-[1vw] bg-arenaMedium py-[0.5vw] rounded-md">
+                                <img alt="fight" src="/game/ui/fight.svg" class="h-[1.5vw]"/>
+                                <span class="">Challenge</span>
+                                <span class="text-button">
+                                    {emitBetweenText(selectedChallengeTarget,10)}
+                                </span>
+                            </div>
+                            <div class="flex gap-[0.6vw] text-[1.1vw] px-[1vw] bg-arenaMedium py-[0.5vw] rounded-md">
+                                <span class="">Stake :</span>
+                                <span class="text-button">
+                                    {selectedStakeDisplay} {config.nativeCurrency.name}
+                                </span>
+                            </div>
+                        </div>
+                        <!--Create a match-->
+                        <button on:click={() => {
+                            checkSquad();
+                            checkOutChallenge();
+                            if (!error&&!errorOutChallenge) {
+                                challenge(squad, address, selectedChallengeTarget, selectedChallengeId);
+                            }
+                        }}  class="flex justify-center self-center items-center h-fit py-[0.7vw] rounded-md border-[0.15vw] border-button hover:border-buttonHover gap-[0.5vw] w-fit px-[11vw]">
+                            <img alt="fight" src="/game/ui/fight.svg" class="h-[2vw]"/>
+                            <span class="text-[1.5vw] ">
+                                Challenge
+                            </span>
+                        </button>
+                    </div>
+                </div>
+            {/if}
 
 
             <!--Error PopUp-->
@@ -2248,7 +2330,6 @@
 
 
 
-            <!--Game nav-->
             <div class="relative flex items-center gap-[2.5vw] z-10 pl-[1vw] mt-[1vw]">
                 <button class="flex flex-col items-center gap-[0.5vw] hover:text-yellow-400" 
                 on:click={()=>{navigation="myTeam"}}>

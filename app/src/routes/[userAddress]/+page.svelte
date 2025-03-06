@@ -881,6 +881,9 @@
 
 
             </div>
+            <span class="text-white italic text-sm self-center">
+                Haven't found your minted NFT? Kindly wait 10 minutes for the marketplace to resync.
+            </span>
             <!--Pagnition Option-->
             <div class="flex flex-wrap gap-[10px] my-[20px] font-semibold text-lg">
                 <button class="py-1 sm:px-[25px] px-[10px] rounded-md {pagenition === "Items"?"text-white bg-button":"text-blue"}"
@@ -900,6 +903,7 @@
                     Offers Received
                 </button>
             </div>
+
             <!--Filter items container-->         
             <div class="flex justify-between my-[20px]">
                 <!--Filter side bar-->

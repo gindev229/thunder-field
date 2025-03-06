@@ -137,7 +137,7 @@
                     const id = event.args[2].toString();
 
 
-                    addNFTToLocalList(collectionAddress, id);
+                    //addNFTToLocalList(collectionAddress, id);
 
                     const { metadata } = await getNFTInfo(collectionAddress, id, [ "owner", "collectionName", "offers", "listingDetails" ]);
 
@@ -197,7 +197,7 @@
 
                         await mintTx.wait();
 
-                        addNFTToLocalList(collectionAddress, drop.tokenId);
+                        //addNFTToLocalList(collectionAddress, drop.tokenId);
 
                         const { metadata } = await getNFTInfo(collectionAddress, drop.tokenId, [ "owner", "collectionName", "offers", "listingDetails" ]);
 

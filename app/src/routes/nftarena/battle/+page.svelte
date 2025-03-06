@@ -10,6 +10,7 @@
     let winner, winnerAddress, receipt, attributes, challenger, defender, endPopUp = false;
     let challengerAddress ="loading";
     let defenderAddress  ="loading";
+    let stake = "loading";
     let Phaser;
     let CardGameScene;
     let game;
@@ -983,6 +984,8 @@
             const responseBody = await response.json();
             gameData = responseBody.payload.data[1].info;
             winner = gameData.winner;
+            stake = gameData.stake;
+            stake = stake;
             receipt = [gameData.winner, gameData.receipt]; 
             challenger = gameData.challenger;
             defender = gameData.defender;
@@ -1091,7 +1094,7 @@
                     Stake
                 </span>
                 <div class="flex items-center gap-[0.5vw] z-[20]">
-                    <span class="text-[1.3vw] font-semibold">0</span>
+                    <span class="text-[1.3vw] font-semibold">{stake}</span>
                     <img class="h-[1.3vw]" alt="ETN" src="/ETN.png"/>
                 </div>
                 <img class="absolute h-[8.5vw]" alt="stake board container" src="/game/elements/sampleStakeBoard.svg"/>
