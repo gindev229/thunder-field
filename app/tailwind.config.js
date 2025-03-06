@@ -41,7 +41,7 @@ export default {
         arenaBg:'#0B0A26'
       },
       backgroundImage: {
-        'orange': 'linear-gradient(to bottom, #00843F, #CAA201)',
+        'linearBlue': 'linear-gradient(to bottom,rgb(22, 0, 132),rgb(23, 19, 1))',
         'linear': 'linear-gradient(to bottom,rgb(230, 240, 255),rgb(204, 201, 222))',
         'linearRed': 'linear-gradient(to right, #F61616, #900D0D)',
 
