@@ -1121,7 +1121,7 @@
                         {#if userAddress === winnerAddress && winner!==-1}
                             <img alt="You Win" class="h-[5vw]" src="/game/elements/youWin.svg"/>
                             <div class="flex items-center gap-[0.5vw]">
-                                <span class="text-[2vw] font-semibold text-green">+ 0</span>
+                                <span class="text-[2vw] font-semibold text-green">+ {stake}</span>
                                 <img class="h-[2vw]" alt="ETN" src="/ETN.png"/>
                             </div>
                             <div class="flex gap-[1vw] text-[1.1vw] font-semibold mt-[1vw]">
@@ -1137,7 +1137,7 @@
                         {:else if userAddress !== winnerAddress && winner!==-1 }    
                             <img alt="You Lose" class="h-[5vw]" src="/game/elements/youLose.svg"/>
                             <div class="flex items-center gap-[0.5vw]">
-                                <span class="text-[2vw] font-semibold text-red-500">- 0</span>
+                                <span class="text-[2vw] font-semibold text-red-500">- {stake}</span>
                                 <img class="h-[2vw]" alt="ETN" src="/ETN.png"/>
                             </div> 
                             <div class="flex gap-[1vw] text-[1.1vw] font-semibold mt-[1vw]">
