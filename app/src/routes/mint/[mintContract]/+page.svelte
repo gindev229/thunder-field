@@ -16,11 +16,8 @@
 
 
     const simpleCollections = {
-        "1": {
-            total: 500
-        },
-        "2": {
-            total: 1440
+        "0x748723AF17899E3C2C1cA682be2733Bca87FDDc8": {
+            total: 1000
         }
     }
 
@@ -181,7 +178,6 @@
                         const proof = responseBody.payload.proof;
                         const drop = responseBody.payload.drop;
 
-                        console.log(proof, collectionAddress);
 
                         const collectionContract = new ethers.Contract(collectionAddress, erc721Merkle, signer);
                         const mintTx = await collectionContract.mint(
@@ -202,7 +198,6 @@
                         const { metadata } = await getNFTInfo(collectionAddress, drop.tokenId, [ "owner", "collectionName", "offers", "listingDetails" ]);
 
                         resultMetadata = metadata;
-                        console.log(resultMetadata, "resultMetadata")
 
                         loading = false; 
 
@@ -252,11 +247,8 @@
             (async function getTotalMintAmount() {
                 try {
                     provider = new ethers.providers.Web3Provider(window.ethereum);
-                    console.log(provider);
                     signer = provider.getSigner();
-                    console.log(signer);
                     address = await signer.getAddress();
-                    console.log(address);
                 } catch (e) {
                     console.log("Address", e);
 
@@ -735,15 +727,17 @@
                                 </div>
                             </div>
                             <div class="flex flex-wrap font-semibold md:gap-[30px] gap-[20px]">
-                                <span>
-                                    <span class="text-darkGray">Minted:</span>
+                                {#if !simpleCollections[collectionAddress]}
+                                    <span>
+                                        <span class="text-darkGray">Minted:</span>
 
-                                    <span>{ (mintedWhitelist >= totalWhitelist?totalWhitelist :mintedWhitelist) + 
-                                     (mintedPublic >= totalPublic ? totalPublic :mintedPublic) + 
-                                     (mintedFree >= totalFree ? totalFree :mintedFree) 
-                                     >= totalAmount? totalAmount : (mintedWhitelist >= totalWhitelist?totalWhitelist :mintedWhitelist) + (mintedPublic >= totalPublic ? totalPublic :mintedPublic) + (mintedFree >= totalFree ? totalFree :mintedFree) }
+                                        <span>{ (mintedWhitelist >= totalWhitelist?totalWhitelist :mintedWhitelist) + 
+                                        (mintedPublic >= totalPublic ? totalPublic :mintedPublic) + 
+                                        (mintedFree >= totalFree ? totalFree :mintedFree) 
+                                        >= totalAmount? totalAmount : (mintedWhitelist >= totalWhitelist?totalWhitelist :mintedWhitelist) + (mintedPublic >= totalPublic ? totalPublic :mintedPublic) + (mintedFree >= totalFree ? totalFree :mintedFree) }
+                                        </span>
                                     </span>
-                                </span>
+                                {/if}
                                 {#if startPublic == 123456789101112 || temCollections[collectionAddress]}
                                     <div class="flex gap-[5px]">
                                         <span class="text-darkGray">Total:</span>
