@@ -552,7 +552,7 @@
                 </div>
                 <div class="absolute flex flex-col bottom-[5vw] items-center">
                     <span class=" text-[1vw]">After importing existing NFTs, you can use that NFT on battle</span>
-                    <span class=" text-[1vw]">Skills of your NFT will be automatically AI-generated based on your NFT trait name</span>
+                    <span class=" text-[1vw]">Skills of your NFT will be automatically generated based on your NFT trait name</span>
                 </div>
                 
             </div>
